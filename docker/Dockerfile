@@ -1,4 +1,4 @@
-FROM php:7.4.3-apache-buster
+FROM php:7.4.19-apache-buster
 
 LABEL maintainer="IQB Berlin"
 LABEL version="1.0"

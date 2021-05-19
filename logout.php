@@ -1,35 +1,39 @@
 <?php
 // www.IQB.hu-berlin.de
-// Bărbulescu, Stroescu, Mechtel
 // 2018
 // license: MIT
 
-	// preflight OPTIONS-Request bei CORS
-	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-		exit();
-	} else {
-		$myreturn = false;
-		$myerrorcode = 503;
-		require_once('vo_code/DBConnection.php');
+// preflight OPTIONS-Request bei CORS
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit();
 
-		$myDBConnection = new DBConnection();
-		if (!$myDBConnection->isError()) {
-			$myerrorcode = 401;
+} else {
+    require_once('vo_code/DBConnection.php');
+    $return = false;
+    $errorCode = 0;
+    $myDBConnection = new DBConnection();
 
-			$data = json_decode(file_get_contents('php://input'), true);
-			$myToken = $data["t"];
+    if ($myDBConnection->isError()) {
+        $errorCode = 503;
 
-			if (isset($myToken)) {
-				$myreturn = $myDBConnection->logout($myToken);
-				$myerrorcode = 0;
-			}
-		}
-		unset($myDBConnection);
+    } else {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $sessionToken = $data["t"];
 
-		if ($myerrorcode > 0) {
-			http_response_code($myerrorcode);
-		} else {
-			echo(json_encode($myreturn));
-		}
-	}
-?>
+        if (!isset($sessionToken) || empty($sessionToken)) {
+            $errorCode = 401;
+
+        } else {
+            $return = $myDBConnection->logout($sessionToken);
+        }
+    }
+
+    unset($myDBConnection);
+
+    if ($errorCode > 0) {
+        http_response_code($errorCode);
+
+    } else {
+        echo(json_encode($return));
+    }
+}

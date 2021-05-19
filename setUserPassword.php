@@ -24,7 +24,7 @@
 			$newPw = $data["new"];
 
 			if (isset($myToken)) {
-				$ok = $myDBConnection->setMyPassword($myToken, $oldPw, $newPw);
+				$ok = $myDBConnection->changePassword($myToken, $oldPw, $newPw);
 				if ($ok) {
 					$myerrorcode = 0;
 					$myreturn = $ok;

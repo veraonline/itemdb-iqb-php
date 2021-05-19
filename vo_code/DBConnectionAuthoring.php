@@ -124,33 +124,32 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // returns all workspaces for the user associated with the given token
-    // returns [] if token not valid or no workspaces 
-    public function getWorkspaceList(string $token): array
+    /**
+     * @param string $sessionId Unique session identifier
+     * @return array
+     * <p>An Array of workspaces for the user associated with a valid session.</p>
+     * <p>An empty array, if there are no workspaces for the user or the session is invalid.</p>
+     */
+    public function getWorkspaceList(string $sessionId): array
     {
-        $myreturn = [];
-        if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
-            $sql = $this->pdoDBhandle->prepare(
-                'SELECT workspaces.id, workspaces.name, workspace_groups.id as ws_group_id, workspace_groups.name as ws_group_name FROM workspaces
-                    INNER JOIN workspace_groups ON workspaces.group_id = workspace_groups.id
-                    INNER JOIN workspace_users ON workspaces.id = workspace_users.workspace_id
-                    INNER JOIN users ON workspace_users.user_id = users.id
-                    INNER JOIN sessions ON  users.id = sessions.user_id
-                    WHERE sessions.token =:token
-                    ORDER BY workspaces.name');
+        if ($this->checkSession($sessionId)) {
+            $stmt = $this->pdoDBhandle->prepare("
+                SELECT workspaces.id, workspaces.name, workspace_groups.id as ws_group_id, workspace_groups.name as ws_group_name
+                FROM workspaces
+                INNER JOIN workspace_groups ON workspaces.group_id = workspace_groups.id
+                INNER JOIN workspace_users ON workspaces.id = workspace_users.workspace_id
+                INNER JOIN users ON workspace_users.user_id = users.id
+                INNER JOIN sessions ON  users.id = sessions.user_id
+                WHERE sessions.token = :sessionId
+                ORDER BY workspaces.name
+            ");
 
-            if ($sql->execute(array(
-                ':token' => $token))) {
+            $stmt->execute([':sessionId' => $sessionId]);
 
-                $data = $sql->fetchAll(PDO::FETCH_ASSOC);
-                if ($data != false) {
-                    $this->refreshSession($token);
-                    $myreturn = $data;
-                }
-            }
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
-        return $myreturn;
+
+        return $data ?? [];
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
